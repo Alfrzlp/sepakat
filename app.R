@@ -10,13 +10,16 @@ library(dplyr)
 library(stringr)
 library(tidyr)
 library(lubridate)
+library(leaflet)
 
-source('syntax.R')
+source('syntaxOlahData.R')
 
 # Global Variable ---------------------------------------------------------
 NAMA_PELABUHAN <- c('Jampea', "Pamatata", "Benteng/Selayar")
-NAMA_BULAN <- c("Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", 
-                "Agustus", "September", "Oktober", "November", "Desember")
+NAMA_BULAN <- c(
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", 
+  "Agustus", "September", "Oktober", "November", "Desember"
+)
 
 
 # header -------------------------------------------------------------------------
@@ -34,12 +37,12 @@ footer <- shinydashboardPlus::dashboardFooter(
 # Sidebar -----------------------------------------------------------------
 sidebar <- shinydashboardPlus::dashboardSidebar(
     shinydashboard::sidebarMenu(
-        menuItem("Pelabuhan", tabName = "pelabuhan", icon = icon("ship", 'fa-solid')),
-        menuItem("Olah Data", tabName = "olah", icon = icon("magnifying-glass-chart", 'fa-solid')),
-        menuItem("Database", tabName = "database", icon = icon("database", 'fa-solid')),
-        menuItem("Rekap Muat", tabName = "rekapMuat", icon = icon("chevron-up", 'fa-solid')),
-        menuItem("Rekap Bongkar", tabName = "rekapBongkar", icon = icon("chevron-down", 'fa-solid')),
-        menuItem("Visualisasi Data", tabName = "viz", icon = icon("chart-line", 'fa-solid'))
+        menuItem(HTML("&nbsp;Pelabuhan"), tabName = "pelabuhan", icon = icon("ship", 'fa-solid')),
+        menuItem(HTML("&nbsp;Olah Data"), tabName = "olah", icon = icon("magnifying-glass-chart", 'fa-solid')),
+        menuItem(HTML("&nbsp;Database"), tabName = "database", icon = icon("database", 'fa-solid')),
+        menuItem(HTML("&nbsp;Rekap Muat"), tabName = "rekapMuat", icon = icon("chevron-up", 'fa-solid')),
+        menuItem(HTML("&nbsp;Rekap Bongkar"), tabName = "rekapBongkar", icon = icon("chevron-down", 'fa-solid')),
+        menuItem(HTML("&nbsp;Visualisasi Data"), tabName = "viz", icon = icon("chart-line", 'fa-solid'))
     )
 )
 
@@ -48,6 +51,13 @@ body <- shinydashboard::dashboardBody(
     tabItems(
         # Tab depan -------------------
         tabItem(tabName = 'pelabuhan',
+                fillRow(
+                  bootstrapPage(
+                    div(class = "outer",
+                        tags$style(type = "text/css", ".outer {position: fixed; top: 41px; left: 0; right: 0; bottom: 0; overflow: hidden; padding: 0}"),
+                        leafletOutput("map_pelabuhan", width = "100%", height = "100%")
+                  ))
+                )
         ),
         
         # Tab Pengolahan --------------
@@ -62,8 +72,7 @@ body <- shinydashboard::dashboardBody(
                             selectInput(inputId = "bulanInput", choices = NAMA_BULAN, label = 'Bulan'),
                             selectInput(inputId = "tahunInput", choices = 2023:2050, label = 'Tahun', selected = format(Sys.Date(), "%Y")),
                             fileInput(inputId = "uploadData", label = "Data", buttonLabel = "Upload", multiple = FALSE, accept = ".xlsx"),      
-                            actionButton(inputId = 'processButton', label = 'Process', style = "color: white; background-color: #04AA6D; width:100%;"),    
-                            actionButton(inputId = 'uploadButton', label = 'Upload', style = "color: white; background-color: #4682b4; width:100%;")    
+                            actionButton(inputId = 'processButton', label = 'Process', style = "color: white; background-color: #04AA6D; width:100%;")  
                         )
                     ),
                     column(
@@ -73,6 +82,7 @@ body <- shinydashboard::dashboardBody(
                             downloadButton(outputId = 'excelButton', icon = NULL, label = 'Excel', style = "color: white; background-color: #04AA6D; width:9%;"),     
                             downloadButton(outputId = 'csvButton', icon = NULL, label = 'CSV', style = "color: white; background-color: #fa4811; width:9%;"),     
                             actionButton(inputId = 'copyButton', label = 'Copy', style = "color: white; background-color: #4682b4; width:9%;"),
+                            actionButton(inputId = 'uploadButton', label = HTML('&nbsp;Upload'), style = "color: white; background-color: #4682b4; width11%;", icon = icon('circle-arrow-up', 'fa-solid')),  
                             DT::dataTableOutput("dataHasil") 
                         )
                     )
@@ -188,13 +198,41 @@ ui <- shinydashboardPlus::dashboardPage(
 
 
 
-#
+# data peta 
+df_pelabuhan <- sf::st_read('data/pelabuhan_indo.geojson') 
+
 # Server ------------------------------------------------------------------
 server <- function(input, output) {
     DF_HASIL <- NULL
     ADA_DATA <- reactiveVal(FALSE)
     waitress <- Waitress$new(selector = '#processButton', theme = "overlay-opacity", infinite = TRUE)
     Wtupload <- Waitress$new(selector = '#uploadButton', theme = "overlay-opacity", infinite = TRUE)
+    
+    # Tab pelabuhan -----------------------------------------------------------
+    output$map_pelabuhan <- renderLeaflet({
+      leaflet(
+          options = leafletOptions(zoomControl = FALSE)
+      ) %>% 
+        fitBounds(120.093992100707, -7.63591806489362, 122.147841557813, -5.62228337910473) %>%
+        addProviderTiles(provider = providers$OpenStreetMap, group = 'OSM') %>%
+        addProviderTiles(provider = providers$CartoDB.DarkMatterNoLabels, group = 'Carto DB') %>%
+        # setView(lng = 120.883669, lat = -6.793342, zoom = 5) %>% 
+        addCircleMarkers(
+          data = df_pelabuhan,
+          # popup = ~ label,
+          label = ~ namaobj,
+          color = ~ fill_circle,
+          opacity = 1,
+          radius = 5
+        ) %>% 
+        addLayersControl(
+          baseGroups = c("Carto DB", "OSM"),
+          position = "bottomright"
+        )
+    })
+    
+    
+    # Tab olah data -----------------------------------------------------------
     
     # Tombol process
     observeEvent(input$processButton, {
@@ -263,7 +301,7 @@ server <- function(input, output) {
       BULAN <- input$bulanInput
       TAHUN <- input$tahunInput
       DF_FULL <- readxl::read_xlsx('data/dataFull.xlsx')
-      
+
       if (nrow(DF_FULL) == 0) {
         sudah_ada <- FALSE
       }else{
@@ -300,47 +338,55 @@ server <- function(input, output) {
       Wtupload$start()
       Sys.sleep(.3)
       
-      df_full <- readxl::read_xlsx('data/dataFull.xlsx')
-      LAPORAN <- input$laporanInput
-      BULAN <- input$bulanInput
-      TAHUN <- as.numeric(input$tahunInput)
-      
-      
-      if (nrow(df_full) == 0) {
-        DF_UPLOAD <- DF_HASIL %>%
-          dplyr::mutate(
-            tahun = TAHUN,
-            bulan = BULAN,
-            laporan = LAPORAN,
-            .before = 1
-          )
-      }else{
-        all_data <- unique(paste0(df_full$laporan, df_full$bulan, df_full$tahun))
-        if (paste0(LAPORAN, BULAN, TAHUN) %in% all_data) {
-          sudah_ada <- TRUE
-        } else {
-          sudah_ada <- FALSE
+      tryCatch(
+        {
+          df_full <- readxl::read_xlsx('data/dataFull.xlsx')
+          LAPORAN <- input$laporanInput
+          BULAN <- input$bulanInput
+          TAHUN <- as.numeric(input$tahunInput)
+          
+          
+          if (nrow(df_full) == 0) {
+            DF_UPLOAD <- DF_HASIL %>%
+              dplyr::mutate(
+                tahun = TAHUN,
+                bulan = BULAN,
+                laporan = LAPORAN,
+                .before = 1
+              )
+          }else{
+            all_data <- unique(paste0(df_full$laporan, df_full$bulan, df_full$tahun))
+            if (paste0(LAPORAN, BULAN, TAHUN) %in% all_data) {
+              sudah_ada <- TRUE
+            } else {
+              sudah_ada <- FALSE
+            }
+            
+            
+            if (!sudah_ada) {
+              df_full <- df_full %>% dplyr::filter(
+                !(bulan == BULAN & tahun == TAHUN & laporan == LAPORAN)
+              )
+            }
+            
+            DF_UPLOAD <- DF_HASIL %>%
+              dplyr::mutate(
+                tahun = TAHUN,
+                bulan = BULAN,
+                laporan = LAPORAN,
+                .before = 1
+              ) %>%
+              dplyr::bind_rows(df_full)
+          }
+          
+          writexl::write_xlsx(x = DF_UPLOAD, path = 'data/dataFull.xlsx')
+          shiny::showNotification("Upload Data Success", type = 'message')
+        },
+        error = function(cond){
+          shiny::showNotification("Error ketika upload data", type = 'error')
+          shiny::showNotification(cond, type = 'error')
         }
-        
-        
-        if (!sudah_ada) {
-          df_full <- df_full %>% dplyr::filter(
-            !(bulan == BULAN & tahun == TAHUN & laporan == LAPORAN)
-          )
-        }
-        
-        DF_UPLOAD <- DF_HASIL %>%
-          dplyr::mutate(
-            tahun = TAHUN,
-            bulan = BULAN,
-            laporan = LAPORAN,
-            .before = 1
-          ) %>%
-          dplyr::bind_rows(df_full)
-      }
-
-      writexl::write_xlsx(x = DF_UPLOAD, path = 'data/dataFull.xlsx')
-      shiny::showNotification("Upload Data Success", type = 'message')
+      )
       
       Wtupload$close()
     })
@@ -353,7 +399,10 @@ server <- function(input, output) {
         shinyjs::toggleState("copyButton", isTRUE(ADA_DATA()))
         shinyjs::toggleState("uploadButton", isTRUE(ADA_DATA()))
     })
+    
+    
 
+    # Tab database ------------------------------------------------------------
     # Database
     df_full <- reactive({
       readxl::read_xlsx('data/dataFull.xlsx')
@@ -366,7 +415,7 @@ server <- function(input, output) {
         "}")
       ),
       # colnames = stringr::str_to_title(colnames(DF_HASIL)),
-      rownames = FALSE
+      rownames = FALSE, filter = "top"
     ) 
     
     
@@ -406,11 +455,12 @@ server <- function(input, output) {
           "}")
         ),
         # colnames = stringr::str_to_title(colnames(DF_HASIL)),
-        rownames = FALSE
+        rownames = FALSE, filter = "top"
       ) 
     })
     
-    
+
+    # Tab rekap ---------------------------------------------------------------
     # Tombol refresh rekap
     # observeEvent(refreshrekapButton, {
     #   df_rekap <- df_full() %>% 
