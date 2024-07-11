@@ -1,5 +1,5 @@
-df_kapal <- readxl::read_xlsx("data/df_kapal.xlsx")
-df_kapal <- df_kapal[df_kapal$pelabuhan == "Jampea", ]
+# df_kapal <- readxl::read_xlsx("data/df_kapal.xlsx")
+# df_kapal <- df_kapal[df_kapal$pelabuhan == "Jampea", ]
 
 
 # Grafik Kapal ------------------------------------------------------------
@@ -50,7 +50,7 @@ grafik_kapal <- function(data) {
         yref = "paper", y = 1, yshift = 40, xshift = 0, showarrow = FALSE,
         font = list(
           family = "Poppins",
-          size = 19,
+          size = 17,
           color = "rgb(82, 82, 82)"
         )
       )
@@ -58,13 +58,13 @@ grafik_kapal <- function(data) {
     plotly::config(modeBarButtonsToRemove = c("zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d"))
 }
 
-grafik_kapal(df_kapal)
+# grafik_kapal(df_kapal)
 
 
 
 # Grafik Lalu Lintas ------------------------------------------------------
-df_lalulintas <- readxl::read_xlsx('data/df_lalulintas.xlsx')
-df_sub <- df_lalulintas[df_lalulintas$pelabuhan == 'Jampea', ]
+# df_lalulintas <- readxl::read_xlsx('data/df_lalulintas.xlsx')
+# df_sub <- df_lalulintas[df_lalulintas$pelabuhan == 'Jampea', ]
 
 
 grafik_lalulintas <- function(data, jenis) {
@@ -84,7 +84,7 @@ grafik_lalulintas <- function(data, jenis) {
     add_trace(
       name = 'Naik',
       data = df_naik,
-      x = ~date, y = ~nilai, 
+      x = ~date, y = ~nilai, connectgaps = TRUE,
       hovertemplate = paste("%{x}    :", "%{y} ", satuan),
       line = list(width = 3),
       marker = list(size = 9)
@@ -92,7 +92,7 @@ grafik_lalulintas <- function(data, jenis) {
     add_trace(
       name = 'Turun',
       data = df_turun,
-      x = ~date, y = ~nilai,
+      x = ~date, y = ~nilai, connectgaps = TRUE,
       hovertemplate = paste("%{x}    :", "%{y} Orang"),
       line = list(color = "rgba(49,130,189, 1)", width = 3),
       marker = list(color = "rgba(49,130,189, 1)", size = 9)
@@ -135,7 +135,7 @@ grafik_lalulintas <- function(data, jenis) {
         yref = "paper", y = 1, yshift = 40, xshift = 0, showarrow = FALSE,
         font = list(
           family = "Poppins",
-          size = 19,
+          size = 17,
           color = "rgb(82, 82, 82)"
         )
       )
@@ -144,9 +144,9 @@ grafik_lalulintas <- function(data, jenis) {
 }
 
 
-grafik_lalulintas(df_sub, 'Mobil')
-grafik_lalulintas(df_sub, 'Motor')
-grafik_lalulintas(df_sub, 'Penumpang')
+# grafik_lalulintas(df_sub, 'Mobil')
+# grafik_lalulintas(df_sub, 'Motor')
+# grafik_lalulintas(df_sub, 'Penumpang')
 
 
 # Grafix Bongkar Muat -----------------------------------------------------
@@ -210,7 +210,7 @@ grafik_bm <- function(data, jenis, bar_color = 'rgba(0,100,80,0.7)'){
         yref = "paper", y = 1, yshift = 40, xshift = 0, showarrow = FALSE,
         font = list(
           family = "Poppins",
-          size = 19,
+          size = 17,
           color = "rgb(82, 82, 82)"
         )
       )
@@ -219,5 +219,5 @@ grafik_bm <- function(data, jenis, bar_color = 'rgba(0,100,80,0.7)'){
 }
 
 
-grafik_bm(p_muat, 'Muat')
-grafik_bm(p_muat, 'Muat', bar_color = 'rgba(49,130,189, 0.9)')
+# grafik_bm(p_muat, 'Muat')
+# grafik_bm(p_muat, 'Muat', bar_color = 'rgba(49,130,189, 0.9)')

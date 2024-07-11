@@ -1,11 +1,11 @@
 name: sepakat
-title:
+title: sepakat
 username: ridsonap
 account: ridsonap
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 12280956
-bundleId:
+bundleId: 8850768
 url: https://ridsonap.shinyapps.io/sepakat/
 version: 1
 asMultiple: FALSE

@@ -14,6 +14,7 @@ library(lubridate)
 library(leaflet)
 
 source('syntaxOlahData.R')
+source('grafik.R')
 
 # Global Variable ---------------------------------------------------------
 NAMA_PELABUHAN <- c('Jampea', "Pamatata", "Benteng/Selayar")
@@ -185,7 +186,10 @@ body <- shinydashboard::dashboardBody(
                 fluidRow(
                   column(width = 12,
                     box(
-                      width = NULL, title = "Mobilitas Penduduk dan Kendaraan", collapsible = TRUE, footer = 'Sumber: Kantor Pelabuhan Jampea dan Pamatata', status = 'primary',
+                      width = NULL, 
+                      title = span(icon("right-left", 'fa-solid'), HTML("&nbsp;&nbsp;Mobilitas Penduduk dan Kendaraan")),
+                      footer = 'Sumber: Kantor Pelabuhan Jampea dan Pamatata', 
+                      solidHeader = TRUE,
                       fluidRow(
                         column(2,
                             selectInput(inputId = "pelabuhanVizInput", choices = c('Jampea', 'Ujung', 'Jinato', 'Kayuadi', 'Bonerate', 'Kalaotoa', 'Pamatata', 'Patumbukkan'), label = NULL, width = '200px')
@@ -197,7 +201,9 @@ body <- shinydashboard::dashboardBody(
                       plotlyOutput("grafikLine", height = 350)
                     ),
                     box(
-                      width = NULL, title = 'Bongkar Muat', collapsible = TRUE,
+                      width = NULL, 
+                      title = span(icon("table-cells-large", 'fa-solid'), HTML("&nbsp;&nbsp;Bongkar Muat")),
+                      solidHeader = TRUE, 
                       fluidRow(
                         column(2,
                                selectInput(inputId = "pelVizBMInput", choices = c('Jampea', 'Ujung', 'Jinato', 'Kayuadi', 'Bonerate', 'Kalaotoa'), label = NULL, width = '200px')
@@ -209,8 +215,8 @@ body <- shinydashboard::dashboardBody(
                                selectInput(inputId = "topnVizBMInput", choices = c(5:15), label = NULL, width = '200px')
                         )
                       ),
-                      column(width = 6, plotlyOutput("topBongkar", height = 400)),
-                      column(width = 6, plotlyOutput("topMuat", height = 400))
+                      column(width = 6, plotlyOutput("topBongkar", height = 350)),
+                      column(width = 6, plotlyOutput("topMuat", height = 350))
                     )
                   )
                 )
@@ -281,7 +287,7 @@ ui <- shinydashboardPlus::dashboardPage(
 
 
 # data peta 
-df_pelabuhan <- sf::st_read('data/pelabuhan_indo.geojson') 
+# df_pelabuhan <- sf::st_read('data/pelabuhan_indo.geojson') 
 
 # Server ------------------------------------------------------------------
 server <- function(input, output) {
@@ -293,27 +299,27 @@ server <- function(input, output) {
     WtrefreshBongkar <- Waitress$new(selector = '#refreshbongkarButton', theme = "overlay-opacity", infinite = TRUE)
     
     # Tab pelabuhan -----------------------------------------------------------
-    output$map_pelabuhan <- renderLeaflet({
-      leaflet(
-          options = leafletOptions(zoomControl = FALSE)
-      ) %>% 
-        fitBounds(120.093992100707, -7.63591806489362, 122.147841557813, -5.62228337910473) %>%
-        addProviderTiles(provider = providers$OpenStreetMap, group = 'OSM') %>%
-        addProviderTiles(provider = providers$CartoDB.DarkMatterNoLabels, group = 'Carto DB') %>%
-        # setView(lng = 120.883669, lat = -6.793342, zoom = 5) %>% 
-        addCircleMarkers(
-          data = df_pelabuhan,
-          # popup = ~ label,
-          label = ~ namaobj,
-          color = ~ fill_circle,
-          opacity = 1,
-          radius = 5
-        ) %>% 
-        addLayersControl(
-          baseGroups = c("Carto DB", "OSM"),
-          position = "bottomright"
-        )
-    })
+    # output$map_pelabuhan <- renderLeaflet({
+    #   leaflet(
+    #       options = leafletOptions(zoomControl = FALSE)
+    #   ) %>% 
+    #     fitBounds(120.093992100707, -7.63591806489362, 122.147841557813, -5.62228337910473) %>%
+    #     addProviderTiles(provider = providers$OpenStreetMap, group = 'OSM') %>%
+    #     addProviderTiles(provider = providers$CartoDB.DarkMatterNoLabels, group = 'Carto DB') %>%
+    #     # setView(lng = 120.883669, lat = -6.793342, zoom = 5) %>% 
+    #     addCircleMarkers(
+    #       data = df_pelabuhan,
+    #       # popup = ~ label,
+    #       label = ~ namaobj,
+    #       color = ~ fill_circle,
+    #       opacity = 1,
+    #       radius = 5
+    #     ) %>% 
+    #     addLayersControl(
+    #       baseGroups = c("Carto DB", "OSM"),
+    #       position = "bottomright"
+    #     )
+    # })
     
     
     # Tab olah data -----------------------------------------------------------
@@ -812,33 +818,33 @@ server <- function(input, output) {
     
     
     # Tab Visualisasi -------------------------------------------------------
-    output$kapalBox <- renderValueBox({
-      valueBox(
-        25, "Kunjungan Kapal", icon = icon("ferry", "fa-solid"),
-        color = "light-blue", width = 3
-      )
-    })
-    
-    output$penumpangBox <- renderValueBox({
-      valueBox(
-        "1231 / 1934", "Penumpang Naik/Turun", icon = icon("person", "fa-solid"),
-        color = "purple", width = 3
-      )
-    })
-    
-    output$motorBox <- renderValueBox({
-      valueBox(
-        "1927 / 1920", "Motor Naik/Turun", icon = icon("motorcycle", "fa-solid"),
-        color = "yellow", width = 3
-      )
-    })
-    
-    output$mobilBox <- renderValueBox({
-      valueBox(
-        "1840 / 2012", "Mobil Naik/Turun", icon = icon("car", "fa-solid"),
-        color = "aqua", width = 3
-      )
-    })
+    # output$kapalBox <- renderValueBox({
+    #   valueBox(
+    #     25, "Kunjungan Kapal", icon = icon("ferry", "fa-solid"),
+    #     color = "light-blue", width = 3
+    #   )
+    # })
+    # 
+    # output$penumpangBox <- renderValueBox({
+    #   valueBox(
+    #     "1231 / 1934", "Penumpang Naik/Turun", icon = icon("person", "fa-solid"),
+    #     color = "purple", width = 3
+    #   )
+    # })
+    # 
+    # output$motorBox <- renderValueBox({
+    #   valueBox(
+    #     "1927 / 1920", "Motor Naik/Turun", icon = icon("motorcycle", "fa-solid"),
+    #     color = "yellow", width = 3
+    #   )
+    # })
+    # 
+    # output$mobilBox <- renderValueBox({
+    #   valueBox(
+    #     "1840 / 2012", "Mobil Naik/Turun", icon = icon("car", "fa-solid"),
+    #     color = "aqua", width = 3
+    #   )
+    # })
     
     output$grafikLine <- renderPlotly({
       if (input$jenisVizInput == 'Kapal') {
@@ -850,10 +856,10 @@ server <- function(input, output) {
         df_lalulintas <- readxl::read_xlsx('data/df_lalulintas.xlsx')
         df_lalulintas <- df_lalulintas[df_lalulintas$pelabuhan == input$pelabuhanVizInput, ]
         
-        if (nrow(df_sub) == 0) {
+        if (nrow(df_lalulintas) == 0) {
           return(empty_plot("Data tidak ditemukan"))
         }else{
-          grafik_lalulintas(df_sub, input$jenisVizInput)
+          grafik_lalulintas(df_lalulintas, input$jenisVizInput)
         }
       }
     })
