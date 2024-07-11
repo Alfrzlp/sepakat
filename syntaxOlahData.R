@@ -1,9 +1,8 @@
 # Daftar masalah
-# error di pamatata
-
+# Gc Gc
 
 # Fungsi olah data ------------------------------------------------------
-olahDataPelabuhan <- function(loc, pelabuhan){
+olahDataPelabuhan <- function(loc, pelabuhan, in_shiny = TRUE){
   tryCatch(
     {
       if (pelabuhan == "Jampea") {
@@ -88,14 +87,13 @@ olahDataPelabuhan <- function(loc, pelabuhan){
         ) %>% 
           dplyr::filter(nama != "-") %>% 
           # Mengatasi nama barang yang di enter
-          dplyr::filter(nilai != "-") %>%  
           dplyr::group_by(id) %>% 
           dplyr::mutate(
-            jenis = 'bongkar',
-            nama = ifelse(
-              !nama %in% c('penumpang', 'mobil', 'motor') & is.na(dplyr::lead(nilai)) & !dplyr::lead(nama) %in% c('penumpang', 'mobil', 'motor'),
-              paste(nama, dplyr::lead(nama)), nama
-            )
+            jenis = 'bongkar'
+            # nama = ifelse(
+            #   !nama %in% c('penumpang', 'mobil', 'motor') & is.na(dplyr::lead(nilai)) & !dplyr::lead(nama) %in% c('penumpang', 'mobil', 'motor'),
+            #   paste(nama, dplyr::lead(nama)), nama
+            # )
           ) %>% 
           dplyr::filter(!is.na(nilai)) %>% 
           dplyr::arrange(id) 
@@ -107,13 +105,12 @@ olahDataPelabuhan <- function(loc, pelabuhan){
           nilai = c(df_hasil$muat_vol, df_hasil$muat_ekor, df_hasil$pnp_naik, df_hasil$mobil_naik, df_hasil$motor_naik)
         ) %>% 
           dplyr::filter(nama != "-") %>% 
-          dplyr::filter(nilai != "-") %>% 
           dplyr::mutate(
-            jenis = 'muat',
-            nama = ifelse(
-              !nama %in% c('penumpang', 'mobil', 'motor') & is.na(dplyr::lead(nilai)) & !dplyr::lead(nama) %in% c('penumpang', 'mobil', 'motor'),
-              paste(nama, dplyr::lead(nama)), nama
-            )
+            jenis = 'muat'
+            # nama = ifelse(
+            #   !nama %in% c('penumpang', 'mobil', 'motor') & is.na(dplyr::lead(nilai)) & !dplyr::lead(nama) %in% c('penumpang', 'mobil', 'motor'),
+            #   paste(nama, dplyr::lead(nama)), nama
+            # )
           ) %>% 
           dplyr::filter(!is.na(nilai)) %>% 
           dplyr::arrange(id)
@@ -128,7 +125,7 @@ olahDataPelabuhan <- function(loc, pelabuhan){
         
         df_final <- df_kapal %>% 
           dplyr::left_join(df_bm) %>% 
-          dplyr::select(-id) %>% 
+          dplyr::select(-id, -dwt) %>% 
           dplyr::mutate(
             tiba_jam = as.POSIXct(format(tiba_jam, nsmall = 2), format = "%H.%M", tz = 'Asia/Makassar'),
             tiba_jam = format(tiba_jam, format = "%H:%M"),
@@ -136,20 +133,37 @@ olahDataPelabuhan <- function(loc, pelabuhan){
             berangkat_jam = format(berangkat_jam, format = "%H:%M")
           )
         
-        shiny::showNotification("Success", type = 'message')
+        if(in_shiny){
+          shiny::showNotification("Success", type = 'message')
+        }
         return(olahKomoditas(df_final))
         
         # Pelabuhan Pamatata ------------------------------------------------------
       }else if (pelabuhan == "Pamatata") {
-        # Bongkar
-        df_bongkar <- readxl::read_xlsx(
-          loc, sheet = 'KEDATANGAN', skip = 9,
-          col_names = c('tiba_tgl', 'nmkapal', 'tiba_jam', 'jml_trip', 'pnp_dewasa', 'pnp_anak', 'pnp_turun',
-                        'g1', 'g2', 'g3', 'g4_pnp', 'g4_brg', 'g5_pnp', 'g5_brg', 'g6_pnp', 'g6_brg', 'g7', 'g8', 'g9',
-                        'motor_turun', 'r4_turun', 'bus_turun', 'truck_turun', 'alatberat_turun',
-                        'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7'),
-          col_types = c('date', 'text', 'date', rep('numeric', 28))
-        ) %>%
+        # Bongkar ---------------------------------------------------------
+        df_bongkar <- tryCatch(
+          {
+            df_bongkar <- readxl::read_xlsx(
+              loc, sheet = 'KEDATANGAN', skip = 9,
+              col_names = c('tiba_tgl', 'nmkapal', 'tiba_jam', 'jml_trip', 'pnp_dewasa', 'pnp_anak', 'pnp_turun',
+                            'g1', 'g2', 'g3', 'g4_pnp', 'g4_brg', 'g5_pnp', 'g5_brg', 'g6_pnp', 'g6_brg', 'g7', 'g8', 'g9',
+                            'motor_turun', 'r4_turun', 'bus_turun', 'truck_turun', 'alatberat_turun',
+                            'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7'),
+              col_types = c('date', 'text', 'date', rep('numeric', 28))
+            )
+          },
+          error = function(cond){
+            df_bongkar <- readxl::read_xlsx(
+              loc, sheet = 'KEDATANGAN', skip = 9,
+              col_names = c('tiba_tgl', 'nmkapal', 'tiba_jam', 'jml_trip', 'pnp_dewasa', 'pnp_anak', 'pnp_turun',
+                            'g1', 'g2', 'g3', 'g4_pnp', 'g4_brg', 'g5_pnp', 'g5_brg', 'g6_pnp', 'g6_brg', 'g7', 'g8', 'g9',
+                            'motor_turun', 'r4_turun', 'bus_turun', 'truck_turun', 'alatberat_turun'),
+              col_types = c('date', 'text', 'date', rep('numeric', 21))
+            )
+          }
+        )
+        
+        df_bongkar <- df_bongkar %>%
           dplyr::slice(-1) %>%
           dplyr::filter(!is.na(nmkapal)) %>%
           tibble::rowid_to_column('kunjungan') %>%
@@ -161,7 +175,7 @@ olahDataPelabuhan <- function(loc, pelabuhan){
             pel_asal = 'Bira', pel_tujuan = 'Bira', pemilik = 'PT. ASDP',
             pelabuhan = 'PELABUHAN PAMATATA', pelayaran = "FERRY", bendera = "RI",
             jenis_kapal = "KMP",
-            panjang = NA, dwt = NA, grt = case_when(
+            panjang = NA, grt = case_when(
               nmkapal == "KMP. KORMOMOLIN" ~ 884,
               nmkapal == "KMP. SANGKE PALANGGA" ~ 884,
               nmkapal == "KMP. BALIBO" ~ 540,
@@ -183,15 +197,29 @@ olahDataPelabuhan <- function(loc, pelabuhan){
           dplyr::mutate(jenis = 'bongkar')
         
 
-        # Muat
-        df_muat <- readxl::read_xlsx(
-          loc, sheet = 'KEBERANGKATAN', skip = 9,
-          col_names = c('berangkat_tgl', 'nmkapal', 'berangkat_jam', 'jml_trip', 'pnp_dewasa', 'pnp_anak', 'pnp_naik',
-                        'g1', 'g2', 'g3', 'g4_pnp', 'g4_brg', 'g5_pnp', 'g5_brg', 'g6_pnp', 'g6_brg', 'g7', 'g8', 'g9',
-                        'motor_naik', 'r4_naik', 'bus_naik', 'truck_naik', 'alatberat_naik',
-                        'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7'),
-          col_types = c('date', 'text', 'date', rep('numeric', 28))
-        ) %>%
+        # Muat -------------------------------------------------------------------
+        df_muat <- tryCatch({
+          df_muat <- readxl::read_xlsx(
+            loc, sheet = 'KEBERANGKATAN', skip = 9,
+            col_names = c('berangkat_tgl', 'nmkapal', 'berangkat_jam', 'jml_trip', 'pnp_dewasa', 'pnp_anak', 'pnp_naik', 
+                          'g1', 'g2', 'g3', 'g4_pnp', 'g4_brg', 'g5_pnp', 'g5_brg', 'g6_pnp', 'g6_brg', 'g7', 'g8', 'g9',
+                          'motor_naik', 'r4_naik', 'bus_naik', 'truck_naik', 'alatberat_naik',
+                          'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7'),
+            col_types = c('date', 'text', 'date', rep('numeric', 28))
+          )
+        }, 
+        error = function(cond){
+          df_muat <- readxl::read_xlsx(
+            loc, sheet = 'KEBERANGKATAN', skip = 9,
+            col_names = c('berangkat_tgl', 'nmkapal', 'berangkat_jam', 'jml_trip', 'pnp_dewasa', 'pnp_anak', 'pnp_naik', 
+                          'g1', 'g2', 'g3', 'g4_pnp', 'g4_brg', 'g5_pnp', 'g5_brg', 'g6_pnp', 'g6_brg', 'g7', 'g8', 'g9',
+                          'motor_naik', 'r4_naik', 'bus_naik', 'truck_naik', 'alatberat_naik'),
+            col_types = c('date', 'text', 'date', rep('numeric', 21))
+          )
+        }
+        )
+        
+        df_muat <- df_muat %>%
           dplyr::slice(-1) %>%
           dplyr::filter(!is.na(nmkapal)) %>%
           tibble::rowid_to_column('kunjungan') %>%
@@ -203,7 +231,7 @@ olahDataPelabuhan <- function(loc, pelabuhan){
             pel_asal = 'Bira', pel_tujuan = 'Bira', pemilik = 'PT. ASDP',
             pelabuhan = 'PELABUHAN PAMATATA', pelayaran = "FERRY", bendera = "RI",
             jenis_kapal = "KMP",
-            panjang = NA, dwt = NA,
+            panjang = NA,
             grt = case_when(
               nmkapal == "KMP. KORMOMOLIN" ~ 884,
               nmkapal == "KMP. SANGKE PALANGGA" ~ 884,
@@ -229,19 +257,19 @@ olahDataPelabuhan <- function(loc, pelabuhan){
         df_final <- dplyr::bind_rows(df_bongkar, df_muat) %>%
           dplyr::arrange(kunjungan)
 
-        # %>%
-        #   dplyr::mutate(
-        #     berangkat_tgl = as.POSIXct(berangkat_tgl, origin = "1970-01-01", tz = 'Asia/Makassar'),
-        #     tiba_tgl = as.POSIXct(tiba_tgl, origin = "1970-01-01", tz = 'Asia/Makassar')
-        #   )
-
-        shiny::showNotification("Success", type = 'message')
+        
+        if(in_shiny){
+          shiny::showNotification("Success", type = 'message')
+        }
+        
         return(olahKomoditas(df_final))
       }
     },
     error = function(cond) {
-      shiny::showNotification("Error: Port name does not match", type = 'error')
-      shiny::showNotification(cond, type = 'error')
+      if(in_shiny){
+        shiny::showNotification("Error: Port name does not match", type = 'error')
+        shiny::showNotification(cond, type = 'error')
+      }
       # Choose a return value in case of error
       NULL
     }
@@ -268,20 +296,162 @@ olahKomoditas <- function(df_hasil){
       pelabuhan = str_to_title(pelabuhan),
       pelayaran = str_to_title(pelayaran),
       nama = case_when(
-        nama %in% c('BARANG.CAMP', 'B CAMP', 'B. CAMP', 'B.  CAMP', 'B.CAMP') ~ 'Barang Campuran',
-        nama %in% c('B.BANGUNAN') ~ 'Bahan Bangunan',
-        nama %in% c('LPG KSG', 'LPG KSNG', 'ELPIJI KOSONG', 'LPG KOSONG') ~ 'LPG Kosong',
-        nama %in% c('GABUS (IKAN)', 'GABUS(IKAN)') ~ 'Gabus Ikan',
+        nama %in% c('BARANG.CAMP', 'B CAMP', 'B. CAMP', 'B.  CAMP', 'B.CAMP', 'B..CAMP', 'B.CAMPUR', "B.. CAMP") ~ 'Barang Campuran',
+        nama %in% c('B.BANGUNAN', 'B. BANGUNAN') ~ 'Bahan Bangunan',
+        nama %in% c('LPG KSG', 'LPG KSNG', 'ELPIJI KOSONG', 'LPG KOSONG', "T. LPG", "TABUNG LPG") ~ 'LPG Kosong',
+        nama %in% c('GABUS (IKAN)', 'GABUS(IKAN)', "GABUS ISI IKAN") ~ 'Gabus Ikan',
         nama %in% c('IKANKERING', 'IKAN KERING') ~ 'Ikan Kering',
         nama %in% c('P. BLOCK', 'PAVING BLOK') ~ 'Paving Blok',
         nama %in% c('DRUM KSNG', 'DRUM KOSONG') ~ 'Drum Kosong',
         nama %in% c('CIPPING', 'CHIPPING') ~ 'Chipping',
         nama %in% c('MENTE', 'JAMBU MENTE') ~ 'Jambu Mente',
         nama %in% c('B.SEMBAKO') ~ 'Sembako',
-        nama %in% c('LPG') ~ 'LPG',
+        nama %in% c('LPG', 'ELPIJI', 'LPG 3 KG') ~ 'LPG',
         nama %in% c('GC') ~ 'GC',
-        TRUE ~ str_to_title(nama)
+        nama %in% c('BBM') ~ 'BBM',
+        nama %in% c('K.DURI') ~ 'Kawat Duri',
+        nama %in% c('GC') ~ 'GC',
+        nama %in% c('R.LAUT', 'R. LAUT', 'RUMPUT.L') ~ 'Rumput Laut',
+        nama %in% c('T.PANCANG', 'TIANG') ~ 'Tiang Pancang',
+        nama %in% c('TIANG BESI') ~ 'Tiang Besi Panel',
+        nama %in% c('MOBILREDY MIX') ~ 'Mobil Mix',
+        nama %in% c("BERAS,CARG", "CARGOBERA", "BERASCARGO") ~ 'Beras',
+        nama %in% c("SERBUK PADI") ~ 'Dedak',
+        TRUE ~ stringr::str_to_title(nama)
       )
     )
 }
+
+
+
+
+# Fungsi Merekap ----------------------------------------------------------
+rekapData <- function(){
+  df_full <- readxl::read_xlsx('data/dataFull.xlsx')
+  # df_full <- olahKomoditas(df_full)
+  
+  df_bongkar <- df_full %>% 
+    dplyr::filter(str_detect(pel_tujuan, 'PATTUMBUKAN')) %>% 
+    mutate(
+      pel_asal = pel_tujuan,
+      pel_tujuan = NA,
+      pelabuhan = 'Pattumbukan'
+    )
+  df_muat <- df_full %>% 
+    dplyr::filter(str_detect(pel_asal, 'PATTUMBUKAN')) %>% 
+    mutate(
+      pel_tujuan = pel_asal,
+      pel_asal = NA,
+      pelabuhan = 'Pattumbukan'
+    )
+  
+  df_rekap <- df_full %>%
+    bind_rows(df_muat) %>% 
+    bind_rows(df_bongkar) %>% 
+    dplyr::filter(!is.na(jenis)) %>%
+    # filter(jenis == "bongkar") %>%
+    group_by(tahun, bulan, pelabuhan, nama, jenis) %>%
+    summarise(nilai = sum(nilai)) %>%
+    pivot_wider(names_from = nama, values_from = nilai) %>%
+    group_by(pelabuhan)
+  
+  df_rekap[is.na(df_rekap)] <- 0
+  
+  wbbongkar = createWorkbook()
+  wbmuat = createWorkbook()
+  
+  # jampea
+  df_rekap %>%
+    dplyr::group_split() %>%
+    sapply(function(dfx){
+      dfx <- dfx %>%
+        mutate(pelabuhan = str_remove_all(pelabuhan, 'Wilker|Pelabuhan|Posker'))
+      
+      nmpelabuhan <- stringr::str_trim(dfx$pelabuhan[1])
+      sheet_muat <- xlsx::createSheet(wbmuat, nmpelabuhan)
+      sheet_bongkar <- xlsx::createSheet(wbbongkar, nmpelabuhan)
+      
+      df_muat <- as.data.frame(dplyr::filter(dfx, jenis == 'muat')) %>%
+        dplyr::select(-pelabuhan, -jenis) %>% 
+        dplyr::arrange(match(bulan, NAMA_BULAN))
+      df_bongkar <- as.data.frame(dplyr::filter(dfx, jenis == 'bongkar')) %>%
+        dplyr::select(-pelabuhan, -jenis) %>% 
+        dplyr::arrange(match(bulan, NAMA_BULAN))
+      
+      if (nmpelabuhan == "Pamatata") {
+        df_muat <- dplyr::select(df_muat, c('tahun', 'bulan', 'Barang Campuran', 'Penumpang', 'Motor', 'Mobil'))
+        df_bongkar <- dplyr::select(df_bongkar, c('tahun', 'bulan', 'Barang Campuran', 'Penumpang', 'Motor', 'Mobil'))
+      }
+      
+      xlsx::addDataFrame(
+        df_muat, sheet = sheet_muat, row.names = FALSE
+      )
+      xlsx::addDataFrame(
+        df_bongkar, sheet = sheet_bongkar, row.names = FALSE
+      )
+    })
+  
+  # pattumbukan
+  
+  saveWorkbook(wbmuat, "data/RekapMuat.xlsx")
+  saveWorkbook(wbbongkar, "data/RekapBongkar.xlsx")
+}
+
+
+
+# empty plot --------------------------------------------------------------
+empty_plot <- function(title = NULL){
+    p <- plotly_empty(type = "scatter", mode = "markers") %>%
+      config(
+        displayModeBar = FALSE
+      ) %>%
+      layout(
+        title = list(
+          text = title,
+          yref = "paper",
+          y = 0.5
+        )
+      )
+    return(p)
+} 
+
+empty_plot("Data tidak ditemukan")
+
+
+# untuk viz ---------------------------------------------------------------
+rekapViz <- function(){
+  df_full <- readxl::read_xlsx('data/dataFull.xlsx')
+  
+  # data kunjungan kapal
+  df_kapal <- df_full %>% 
+    group_by(tahun, bulan, pelabuhan) %>% 
+    summarise(
+      kapal = max(kunjungan)
+    ) %>% 
+    mutate(
+      pelabuhan = str_remove_all(pelabuhan, 'Wilker|Pelabuhan|Posker'),
+      pelabuhan = str_trim(pelabuhan),
+      bulan = factor(bulan, NAMA_BULAN, labels = 1:12),
+      date = lubridate::my(paste(bulan, tahun))
+    ) %>% 
+    dplyr::select(date, pelabuhan, kapal)
+  
+  # data penumpang, mobil, motor
+  df_lalulintas <- df_full %>% 
+    filter(nama %in% c("Penumpang", 'Mobil', 'Motor')) %>% 
+    group_by(tahun, bulan, pelabuhan, jenis, nama) %>% 
+    summarise(
+      nilai = sum(nilai, na.rm = TRUE)
+    ) %>% 
+    mutate(
+      pelabuhan = str_remove_all(pelabuhan, 'Wilker|Pelabuhan|Posker'),
+      pelabuhan = str_trim(pelabuhan),
+      bulan = factor(bulan, NAMA_BULAN, labels = 1:12),
+      date = lubridate::my(paste(bulan, tahun))
+    )
+  
+  writexl::write_xlsx(df_kapal, 'data/df_kapal.xlsx')
+  writexl::write_xlsx(df_lalulintas, 'data/df_lalulintas.xlsx')
+}
+
 

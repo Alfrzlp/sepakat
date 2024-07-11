@@ -4,6 +4,7 @@ library(shinydashboard)
 library(shinyjs)
 # library(bslib)
 library(waiter)
+library(plotly)
 library(xlsx)
 library(DT)
 library(dplyr)
@@ -24,8 +25,12 @@ NAMA_BULAN <- c(
 
 # header -------------------------------------------------------------------------
 header <- shinydashboardPlus::dashboardHeader(
-    title = ""
+    title = ''
 ) 
+
+# header$children[[2]]$children <-tags$a(
+#   tags$img(src = 'logo.png', height = '30', width = '150')
+# )
 
 # Footer ------------------------------------------------------------------
 footer <- shinydashboardPlus::dashboardFooter(
@@ -37,7 +42,7 @@ footer <- shinydashboardPlus::dashboardFooter(
 # Sidebar -----------------------------------------------------------------
 sidebar <- shinydashboardPlus::dashboardSidebar(
     shinydashboard::sidebarMenu(
-        menuItem(HTML("&nbsp;Pelabuhan"), tabName = "pelabuhan", icon = icon("ship", 'fa-solid')),
+        # menuItem(HTML("&nbsp;Pelabuhan"), tabName = "pelabuhan", icon = icon("ship", 'fa-solid')),
         menuItem(HTML("&nbsp;Olah Data"), tabName = "olah", icon = icon("magnifying-glass-chart", 'fa-solid')),
         menuItem(HTML("&nbsp;Database"), tabName = "database", icon = icon("database", 'fa-solid')),
         menuItem(HTML("&nbsp;Rekap Muat"), tabName = "rekapMuat", icon = icon("chevron-up", 'fa-solid')),
@@ -50,15 +55,15 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
 body <- shinydashboard::dashboardBody(
     tabItems(
         # Tab depan -------------------
-        tabItem(tabName = 'pelabuhan',
-                fillRow(
-                  bootstrapPage(
-                    div(class = "outer",
-                        tags$style(type = "text/css", ".outer {position: fixed; top: 41px; left: 0; right: 0; bottom: 0; overflow: hidden; padding: 0}"),
-                        leafletOutput("map_pelabuhan", width = "100%", height = "100%")
-                  ))
-                )
-        ),
+        # tabItem(tabName = 'pelabuhan',
+        #         fillRow(
+        #           bootstrapPage(
+        #             div(class = "outer",
+        #                 tags$style(type = "text/css", ".outer {position: fixed; top: 41px; left: 0; right: 0; bottom: 0; overflow: hidden; padding: 0}"),
+        #                 leafletOutput("map_pelabuhan", width = "100%", height = "100%")
+        #           ))
+        #         )
+        # ),
         
         # Tab Pengolahan --------------
         tabItem(tabName = 'olah',
@@ -79,33 +84,61 @@ body <- shinydashboard::dashboardBody(
                         width = 9,
                         box(
                             width = NULL, headerBorder = FALSE, 
-                            downloadButton(outputId = 'excelButton', icon = NULL, label = 'Excel', style = "color: white; background-color: #04AA6D; width:9%;"),     
-                            downloadButton(outputId = 'csvButton', icon = NULL, label = 'CSV', style = "color: white; background-color: #fa4811; width:9%;"),     
-                            actionButton(inputId = 'copyButton', label = 'Copy', style = "color: white; background-color: #4682b4; width:9%;"),
-                            actionButton(inputId = 'uploadButton', label = HTML('&nbsp;Upload'), style = "color: white; background-color: #4682b4; width11%;", icon = icon('circle-arrow-up', 'fa-solid')),  
+                            downloadButton(outputId = 'excelButton', icon = NULL, label = 'Excel', style = "color: white; background-color: #04AA6D; width:100px;"),     
+                            # downloadButton(outputId = 'csvButton', icon = NULL, label = 'CSV', style = "color: white; background-color: #fa4811; width:9%;"),     
+                            actionButton(inputId = 'copyButton', label = 'Copy', style = "color: white; background-color: #4682b4; width:100px"),
+                            actionButton(inputId = 'uploadButton', label = HTML('&nbsp;Upload'), style = "color: white; background-color: #4682b4; width:100px;", icon = icon('circle-arrow-up', 'fa-solid')),  
                             DT::dataTableOutput("dataHasil") 
                         )
                     )
                 )
         ),
-        # Tab visualisasi -----------
+        # Tab database -----------
         tabItem(tabName = 'database',
           fluidRow(
             column(
               width = 12,
               box(
                 width = NULL, headerBorder = FALSE, 
-                downloadButton(outputId = 'exceldbButton', icon = NULL, label = 'Excel', style = "color: white; background-color: #04AA6D; width:9%;"),     
-                downloadButton(outputId = 'csvdbButton', icon = NULL, label = 'CSV', style = "color: white; background-color: #fa4811; width:9%;"),     
-                actionButton(inputId = 'copydbButton', label = 'Copy', style = "color: white; background-color: #4682b4; width:9%;"),
-                actionButton(inputId = 'refreshdbButton', label = 'Refresh', style = "color: white; background-color: #4682b4; width:9%;"),
+                downloadButton(outputId = 'exceldbButton', icon = NULL, label = 'Excel', style = "color: white; background-color: #04AA6D; width:100px;"), 
+                actionButton(inputId = 'copydbButton', label = 'Copy', style = "color: white; background-color: #4682b4; width:100px;"),
+                actionButton(inputId = 'refreshdbButton', label = 'Refresh', style = "color: white; background-color: #4682b4; width:100px;"),
                 DT::dataTableOutput("dataFull")
               )
             )
           )
         ),
         
-        tabItem(tabName = 'rekapBongkar'
+        tabItem(tabName = 'rekapBongkar',
+                fluidRow(
+                  column(
+                    width = 12,
+                    box(
+                      width = NULL, headerBorder = FALSE, height = '55px',
+                      downloadButton(outputId = 'excelbongkarButton', icon = NULL, label = 'Excel', style = "color: white; background-color: #04AA6D; width:100px;"),  
+                      actionButton(inputId = 'copybongkarButton', label = 'Copy', style = "color: white; background-color: #4682b4; width:100px;"),
+                      actionButton(inputId = 'refreshbongkarButton', label = 'Refresh', style = "color: white; background-color: #4682b4; width:100px;"),
+                      div(
+                        selectInput(inputId = "tahunBongkarInput", choices = 2023:2050, label = NULL, selected = format(Sys.Date(), "%Y"), width = '100px'),
+                        style = "float:right"
+                      )
+                    ),
+                    
+                    tabBox(
+                      width = NULL, id = 'tabBoxDataBongkar', 
+                      tabPanel("Jampea", DT::dataTableOutput("bongkarJampea")),
+                      tabPanel("Ujung", DT::dataTableOutput("bongkarUjung")),
+                      tabPanel("Kayuadi", DT::dataTableOutput("bongkarKayuadi")),
+                      tabPanel("Jinato", DT::dataTableOutput("bongkarJinato")),
+                      tabPanel("Bonerate", DT::dataTableOutput("bongkarBonerate")),
+                      tabPanel("Kalaotoa", DT::dataTableOutput("bongkarKalaotoa")),
+                      tabPanel("Pamatata", DT::dataTableOutput("bongkarPamatata")),
+                      tabPanel("Pattumbukan", DT::dataTableOutput("bongkarPattumbukan")),
+                      tabPanel("Benteng/Selayar", DT::dataTableOutput("bongkarBenteng"))
+                    )
+                    
+                  )
+                )       
         ),
         
         # Tab visualisasi -----------
@@ -114,36 +147,80 @@ body <- shinydashboard::dashboardBody(
                   column(
                     width = 12,
                     box(
-                      width = NULL, headerBorder = FALSE, 
-                      downloadButton(outputId = 'excelrekapButton', icon = NULL, label = 'Excel', style = "color: white; background-color: #04AA6D; width:9%;"),     
-                      downloadButton(outputId = 'csvrekapButton', icon = NULL, label = 'CSV', style = "color: white; background-color: #fa4811; width:9%;"),     
-                      actionButton(inputId = 'copyrekapButton', label = 'Copy', style = "color: white; background-color: #4682b4; width:9%;"),
-                      actionButton(inputId = 'refreshrekapButton', label = 'Refresh', style = "color: white; background-color: #4682b4; width:9%;"),
+                      width = NULL, headerBorder = FALSE, height = '55px',
+                      downloadButton(outputId = 'excelmuatButton', icon = NULL, label = 'Excel', style = "color: white; background-color: #04AA6D; width:100px;"),  
+                      actionButton(inputId = 'copymuatButton', label = 'Copy', style = "color: white; background-color: #4682b4; width:100px;"),
+                      actionButton(inputId = 'refreshmuatButton', label = 'Refresh', style = "color: white; background-color: #4682b4; width:100px;"),
+                      div(
+                          selectInput(inputId = "tahunMuatInput", choices = 2023:2050, label = NULL, selected = format(Sys.Date(), "%Y"), width = "100px"),
+                          style = "float:right"
+                      )
                     ),
                     
                     tabBox(
-                      width = NULL, id = 'tabBoxData', 
-                      tabPanel("Jampea", DT::dataTableOutput("dataJampea")),
-                      tabPanel("Ujung", DT::dataTableOutput("dataUjung")),
-                      tabPanel("Kayuadi", DT::dataTableOutput("dataKayuadi")),
-                      tabPanel("Jinato", DT::dataTableOutput("dataJinato")),
-                      tabPanel("Bonerate", DT::dataTableOutput("dataBonerate")),
-                      tabPanel("Kalaotoa", DT::dataTableOutput("dataKalaotoa")),
-                      tabPanel("Pamatata", DT::dataTableOutput("dataPamatata")),
-                      tabPanel("Patumbukkan", DT::dataTableOutput("dataPatumbukkan")),
-                      tabPanel("Benteng/Selayar", DT::dataTableOutput("dataBenteng"))
+                      width = NULL, id = 'tabBoxDataMuat', 
+                      tabPanel("Jampea", DT::dataTableOutput("muatJampea")),
+                      tabPanel("Ujung", DT::dataTableOutput("muatUjung")),
+                      tabPanel("Kayuadi", DT::dataTableOutput("muatKayuadi")),
+                      tabPanel("Jinato", DT::dataTableOutput("muatJinato")),
+                      tabPanel("Bonerate", DT::dataTableOutput("muatBonerate")),
+                      tabPanel("Kalaotoa", DT::dataTableOutput("muatKalaotoa")),
+                      tabPanel("Pamatata", DT::dataTableOutput("muatPamatata")),
+                      tabPanel("Pattumbukan", DT::dataTableOutput("muatPattumbukan")),
+                      tabPanel("Benteng/Selayar", DT::dataTableOutput("muatBenteng"))
                     )
       
                   )
                 )         
         ),
         # Tab visualisasi -----------
-        tabItem(tabName = 'viz'
+        tabItem(tabName = 'viz',
+                # fluidRow(
+                #   column(3, valueBoxOutput("kapalBox", width = NULL)),
+                #   column(3, valueBoxOutput("penumpangBox", width = NULL)),
+                #   column(3, valueBoxOutput("motorBox", width = NULL)),
+                #   column(3, valueBoxOutput("mobilBox", width = NULL))
+                # ),
+                
+                fluidRow(
+                  column(width = 12,
+                    box(
+                      width = NULL, title = "Mobilitas Penduduk dan Kendaraan", collapsible = TRUE, footer = 'Sumber: Kantor Pelabuhan Jampea dan Pamatata', status = 'primary',
+                      fluidRow(
+                        column(2,
+                            selectInput(inputId = "pelabuhanVizInput", choices = c('Jampea', 'Ujung', 'Jinato', 'Kayuadi', 'Bonerate', 'Kalaotoa', 'Pamatata', 'Patumbukkan'), label = NULL, width = '200px')
+                        ),
+                        column(2,
+                            selectInput(inputId = "jenisVizInput", choices = c('Kapal','Penumpang', 'Motor', 'Mobil'), label = NULL, width = '200px')
+                        )
+                      ),
+                      plotlyOutput("grafikLine", height = 350)
+                    ),
+                    box(
+                      width = NULL, title = 'Bongkar Muat', collapsible = TRUE,
+                      fluidRow(
+                        column(2,
+                               selectInput(inputId = "pelVizBMInput", choices = c('Jampea', 'Ujung', 'Jinato', 'Kayuadi', 'Bonerate', 'Kalaotoa'), label = NULL, width = '200px')
+                        ),
+                        column(2,
+                               selectInput(inputId = "tahunVizBMInput", choices = 2023:2024, label = NULL, width = '200px')
+                        ),
+                        column(2,
+                               selectInput(inputId = "topnVizBMInput", choices = c(5:15), label = NULL, width = '200px')
+                        )
+                      ),
+                      column(width = 6, plotlyOutput("topBongkar", height = 400)),
+                      column(width = 6, plotlyOutput("topMuat", height = 400))
+                    )
+                  )
+                )
+
         )
     ),
     shinyjs::useShinyjs(),
     
     tags$head(
+      tags$link(rel = "icon", type = "image/png", sizes = "32x32", href = "/rect23.png"),
       tags$style(
          '.content-wrapper {
             background-color: #e6e6e5;
@@ -152,10 +229,11 @@ body <- shinydashboard::dashboardBody(
           .box {
             border-top: none;
             border-radius: 3px;
+            padding: 1px;
             box-shadow: 0px 3px 3px 0px rgb(0, 0, 0, 0.2);
           }
           
-          #tabBoxData {
+          #tabBoxDataMuat {
             border-top: none;
             border-radius: 3px;
             box-shadow: 0px 3px 3px 0px rgb(0, 0, 0, 0.2);
@@ -179,10 +257,14 @@ body <- shinydashboard::dashboardBody(
             margin-top: 10px;
             font-weight: 1.5;
           }
+          
+          table.dataTable thead tr {
+            background-color: #4682b4;
+            color: white;
+          }
       '
     ))
 )
-
 
 
 # Ui  -----------------------------------------------------------
@@ -207,6 +289,8 @@ server <- function(input, output) {
     ADA_DATA <- reactiveVal(FALSE)
     waitress <- Waitress$new(selector = '#processButton', theme = "overlay-opacity", infinite = TRUE)
     Wtupload <- Waitress$new(selector = '#uploadButton', theme = "overlay-opacity", infinite = TRUE)
+    WtrefreshMuat <- Waitress$new(selector = '#refreshmuatButton', theme = "overlay-opacity", infinite = TRUE)
+    WtrefreshBongkar <- Waitress$new(selector = '#refreshbongkarButton', theme = "overlay-opacity", infinite = TRUE)
     
     # Tab pelabuhan -----------------------------------------------------------
     output$map_pelabuhan <- renderLeaflet({
@@ -249,11 +333,7 @@ server <- function(input, output) {
             
             # menampilkan output -------------
             output$dataHasil <- DT::renderDataTable(
-                DF_HASIL, options = list(scrollX = TRUE, initComplete = JS(
-                  "function(settings, json) {",
-                  "$(this.api().table().header()).css({'background-color': '#4682b4', 'color': 'white'});",
-                  "}")
-                ),
+                DF_HASIL, options = list(scrollX = TRUE),
                 colnames = stringr::str_to_title(colnames(DF_HASIL)),
                 rownames = FALSE
             ) 
@@ -280,14 +360,14 @@ server <- function(input, output) {
     )
     
     # Tombol download CSV
-    output$csvButton <- downloadHandler(
-        filename = function(){
-            paste0(input$laporanInput, "_", input$bulanInput, "_", input$tahunInput, ".csv")
-        },
-        content = function(fname){
-            vroom::vroom_write(x = DF_HASIL, file = fname, delim = ',')
-        }
-    )
+    # output$csvButton <- downloadHandler(
+    #     filename = function(){
+    #         paste0(input$laporanInput, "_", input$bulanInput, "_", input$tahunInput, ".csv")
+    #     },
+    #     content = function(fname){
+    #         vroom::vroom_write(x = DF_HASIL, file = fname, delim = ',')
+    #     }
+    # )
     
     # Tombol Copy
     observeEvent(input$copyButton, {
@@ -344,7 +424,7 @@ server <- function(input, output) {
           LAPORAN <- input$laporanInput
           BULAN <- input$bulanInput
           TAHUN <- as.numeric(input$tahunInput)
-          
+          DF_UPLOAD <- NULL
           
           if (nrow(df_full) == 0) {
             DF_UPLOAD <- DF_HASIL %>%
@@ -364,19 +444,29 @@ server <- function(input, output) {
             
             
             if (!sudah_ada) {
-              df_full <- df_full %>% dplyr::filter(
-                !(bulan == BULAN & tahun == TAHUN & laporan == LAPORAN)
-              )
+              DF_UPLOAD <- DF_HASIL %>%
+                dplyr::mutate(
+                  tahun = TAHUN,
+                  bulan = BULAN,
+                  laporan = LAPORAN,
+                  .before = 1
+                ) %>%
+                dplyr::bind_rows(df_full)
+            }else{
+              df_full <- df_full %>% 
+                dplyr::filter(
+                  !(bulan == BULAN & tahun == TAHUN & laporan == LAPORAN)
+                )
+              
+              DF_UPLOAD <- DF_HASIL %>%
+                dplyr::mutate(
+                  tahun = TAHUN,
+                  bulan = BULAN,
+                  laporan = LAPORAN,
+                  .before = 1
+                ) %>%
+                dplyr::bind_rows(df_full)
             }
-            
-            DF_UPLOAD <- DF_HASIL %>%
-              dplyr::mutate(
-                tahun = TAHUN,
-                bulan = BULAN,
-                laporan = LAPORAN,
-                .before = 1
-              ) %>%
-              dplyr::bind_rows(df_full)
           }
           
           writexl::write_xlsx(x = DF_UPLOAD, path = 'data/dataFull.xlsx')
@@ -388,6 +478,7 @@ server <- function(input, output) {
         }
       )
       
+      rekapViz()
       Wtupload$close()
     })
     
@@ -409,13 +500,9 @@ server <- function(input, output) {
     })
     
     output$dataFull <- DT::renderDataTable(
-      df_full(), options = list(scrollX = TRUE, initComplete = JS(
-        "function(settings, json) {",
-        "$(this.api().table().header()).css({'background-color': '#4682b4', 'color': 'white'});",
-        "}")
-      ),
+      df_full(), options = list(scrollX = TRUE),
       # colnames = stringr::str_to_title(colnames(DF_HASIL)),
-      rownames = FALSE, filter = "top"
+      rownames = FALSE
     ) 
     
     
@@ -430,14 +517,14 @@ server <- function(input, output) {
     )
     
     # Tombol download CSV db
-    output$csvdbButton <- downloadHandler(
-      filename = function(){
-        paste0("Data_BongkarMuat_", format(Sys.time(), "%H:%M:%S_%d%b%Y"), ".csv")
-      },
-      content = function(fname){
-        vroom::vroom_write(x = df_full(), file = fname, delim = ',')
-      }
-    )
+    # output$csvdbButton <- downloadHandler(
+    #   filename = function(){
+    #     paste0("Data_BongkarMuat_", format(Sys.time(), "%H:%M:%S_%d%b%Y"), ".csv")
+    #   },
+    #   content = function(fname){
+    #     vroom::vroom_write(x = df_full(), file = fname, delim = ',')
+    #   }
+    # )
     
     # Tombol Copy db
     observeEvent(input$copydbButton, {
@@ -449,140 +536,144 @@ server <- function(input, output) {
     observeEvent(input$refreshdbButton, {
       df_full <- readxl::read_xlsx('data/dataFull.xlsx')
       output$dataFull <- DT::renderDataTable(
-        df_full, options = list(scrollX = TRUE, initComplete = JS(
-          "function(settings, json) {",
-          "$(this.api().table().header()).css({'background-color': '#4682b4', 'color': 'white'});",
-          "}")
-        ),
-        # colnames = stringr::str_to_title(colnames(DF_HASIL)),
-        rownames = FALSE, filter = "top"
+        df_full, options = list(scrollX = TRUE),
+        rownames = FALSE
       ) 
     })
     
 
     # Tab rekap ---------------------------------------------------------------
     # Tombol refresh rekap
-    # observeEvent(refreshrekapButton, {
-    #   df_rekap <- df_full() %>% 
-    #     dplyr::filter(!is.na(jenis)) %>% 
-    #     # filter(jenis == "bongkar") %>% 
-    #     group_by(bulan, pelabuhan, nama, jenis) %>% 
-    #     summarise(nilai = sum(nilai)) %>% 
-    #     pivot_wider(names_from = nama, values_from = nilai) %>% 
-    #     group_by(pelabuhan)
-    #   
-    #   df_rekap[is.na(df_rekap)] <- 0
-    #   df_rekap
-    #   
-    #   
-    #   wbbongkar = createWorkbook()
-    #   wbmuat = createWorkbook()
-    #   
-    #   df_rekap %>% 
-    #     group_split() %>%
-    #     sapply(function(dfx){
-    #       dfx <- dfx %>% 
-    #         mutate(pelabuhan = str_remove_all(pelabuhan, 'Wilker|Pelabuhan|Posker'))
-    #       
-    #       sheet_muat = createSheet(wbmuat, dfx$pelabuhan[1])
-    #       sheet_bongkar = createSheet(wbbongkar, dfx$pelabuhan[1])
-    #       
-    #       df_muat <- as.data.frame(dplyr::filter(dfx, jenis == 'muat')) %>% 
-    #         dplyr::select(-pelabuhan, -jenis)
-    #       df_bongkar <- as.data.frame(dplyr::filter(dfx, jenis == 'bongkar')) %>% 
-    #         dplyr::select(-pelabuhan, -jenis)
-    #       
-    #       addDataFrame(
-    #         df_muat, sheet = sheet_muat, row.names = FALSE
-    #       )
-    #       addDataFrame(
-    #         df_bongkar, sheet = sheet_bongkar, row.names = FALSE
-    #       )
-    #     })
-    #   saveWorkbook(wbmuat, "RekapMuat2.xlsx")
-    #   saveWorkbook(wbbongkar, "RekapBongkar2.xlsx")
-    # 
-    # })
-                  
+    observeEvent(input$refreshmuatButton, {
+      WtrefreshMuat$start()
+      Sys.sleep(.3)
+      
+      rekapData()
+      
+      TAHUN <- input$tahunMuatInput
+      PELABUHAN <- input$tabBoxDataMuat
+      df_full <- readxl::read_xlsx('data/RekapMuat.xlsx', sheet = PELABUHAN)
+      
+      if (TAHUN %in% unique(df_full$tahun)) {
+        df_full <- dplyr::filter(df_full, tahun == TAHUN)
+        
+        output[[paste0('muat', PELABUHAN)]] <- DT::renderDataTable(
+          df_full, options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
+          rownames = FALSE
+        )
+      }else{
+        shiny::showNotification(stringr::str_glue("Error data muat {PELABUHAN} tahun {TAHUN} tidak ditemukan"), type = 'error')
+      }
+      
+      WtrefreshMuat$close()
+    })
+    
+    observeEvent(input$refreshbongkarButton, {
+      WtrefreshBongkar$start()
+      Sys.sleep(.3)
+      
+      rekapData()
+      
+      TAHUN <- input$tahunBongkarInput
+      PELABUHAN <- input$tabBoxDataBongkar
+      df_full <- readxl::read_xlsx('data/RekapBongkar.xlsx', sheet = PELABUHAN)
+      
+      if (TAHUN %in% unique(df_full$tahun)) {
+        df_full <- dplyr::filter(df_full, tahun == TAHUN)
+        
+        output[[paste0('muat', PELABUHAN)]] <- DT::renderDataTable(
+          df_full, options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
+          rownames = FALSE
+        )
+      }else{
+        shiny::showNotification(stringr::str_glue("Error data bongkar {PELABUHAN} tahun {TAHUN} tidak ditemukan"), type = 'error')
+      }
+      
+      WtrefreshBongkar$close()
+    })
+    
     # Membaca semua sheet
-    df_jampea <- reactive({
-      readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Jampea')
-    })
-    df_ujung <- reactive({
-      readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Ujung')
-    })
-    df_bonerate <- reactive({
-      readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Bonerate')
-    })
-    df_kalaotoa <- reactive({
-      readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Kalaotoa')
-    })
-    df_kayuadi <- reactive({
-      readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Kayuadi')
-    })
-    df_jinato <- reactive({
-      readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Jinato')
-    })
+    df_jampea <- reactiveValues(
+      muat = readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Jampea'),
+      bongkar = readxl::read_xlsx('data/RekapBongkar.xlsx', sheet = 'Jampea')
+    )
+    df_ujung <- reactiveValues(
+      muat = readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Ujung'),
+      bongkar = readxl::read_xlsx('data/RekapBongkar.xlsx', sheet = 'Ujung')
+    )
+    df_bonerate <- reactiveValues(
+      muat = readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Bonerate'),
+      bongkar = readxl::read_xlsx('data/RekapBongkar.xlsx', sheet = 'Bonerate')
+    )
+    df_kalaotoa <- reactiveValues(
+      muat = readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Kalaotoa'),
+      bongkar = readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Kalaotoa')
+    )
+    df_kayuadi <- reactiveValues(
+      muat = readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Kayuadi'),
+      bongkar = readxl::read_xlsx('data/RekapBongkar.xlsx', sheet = 'Kayuadi')
+    )
+    df_jinato <- reactiveValues(
+      muat = readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Jinato'),
+      bongkar = readxl::read_xlsx('data/RekapBongkar.xlsx', sheet = 'Jinato')
+    )
+    df_pamatata <- reactiveValues(
+      muat = readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Pamatata'),
+      bongkar = readxl::read_xlsx('data/RekapBongkar.xlsx', sheet = 'Pamatata')
+    )
+    df_pattumbukan <- reactiveValues(
+      muat = readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Pattumbukan'),
+      bongkar = readxl::read_xlsx('data/RekapBongkar.xlsx', sheet = 'Pattumbukan')
+    )
+    
     
     
     # Data rekap ----------------------
-    output$dataJampea <- DT::renderDataTable(
-      df_jampea(), options = list(scrollX = TRUE, initComplete = JS(
-        "function(settings, json) {",
-        "$(this.api().table().header()).css({'background-color': '#4682b4', 'color': 'white'});",
-        "}"), style = 'bootstrap', pageLength = 13, dom = 't'
-      ),
-      # colnames = stringr::str_to_title(colnames(DF_HASIL)),
+    output$muatJampea <- DT::renderDataTable(
+      df_jampea$muat[df_jampea$muat$tahun == input$tahunMuatInput, ], 
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't' ),
       rownames = FALSE
     )
     
-    output$dataUjung <- DT::renderDataTable(
-      df_ujung(), options = list(scrollX = TRUE, initComplete = JS(
-        "function(settings, json) {",
-        "$(this.api().table().header()).css({'background-color': '#4682b4', 'color': 'white'});",
-        "}"), style = 'bootstrap', pageLength = 13, dom = 't'
-      ),
-      # colnames = stringr::str_to_title(colnames(DF_HASIL)),
+    output$muatUjung <- DT::renderDataTable(
+      df_ujung$muat[df_ujung$muat$tahun == input$tahunMuatInput, ], 
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
       rownames = FALSE
     )
     
-    output$dataBonerate <- DT::renderDataTable(
-      df_bonerate(), options = list(scrollX = TRUE, initComplete = JS(
-        "function(settings, json) {",
-        "$(this.api().table().header()).css({'background-color': '#4682b4', 'color': 'white'});",
-        "}"), style = 'bootstrap', pageLength = 13, dom = 't'
-      ),
-      # colnames = stringr::str_to_title(colnames(DF_HASIL)),
+    output$muatBonerate <- DT::renderDataTable(
+      df_bonerate$muat[df_bonerate$muat$tahun == input$tahunMuatInput, ], 
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
       rownames = FALSE
     )
     
-    output$dataKalaotoa <- DT::renderDataTable(
-      df_kalaotoa(), options = list(scrollX = TRUE, initComplete = JS(
-        "function(settings, json) {",
-        "$(this.api().table().header()).css({'background-color': '#4682b4', 'color': 'white'});",
-        "}"), style = 'bootstrap', pageLength = 13, dom = 't'
-      ),
-      # colnames = stringr::str_to_title(colnames(DF_HASIL)),
+    output$muatKalaotoa <- DT::renderDataTable(
+      df_kalaotoa$muat[df_kalaotoa$muat$tahun == input$tahunMuatInput, ], 
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
       rownames = FALSE
     )
     
-    output$dataKayuadi <- DT::renderDataTable(
-      df_kayuadi(), options = list(scrollX = TRUE, initComplete = JS(
-        "function(settings, json) {",
-        "$(this.api().table().header()).css({'background-color': '#4682b4', 'color': 'white'});",
-        "}"), style = 'bootstrap', pageLength = 13, dom = 't'
-      ),
-      # colnames = stringr::str_to_title(colnames(DF_HASIL)),
+    output$muatKayuadi <- DT::renderDataTable(
+      df_kayuadi$muat[df_kayuadi$muat$tahun == input$tahunMuatInput, ], 
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
       rownames = FALSE
     )
     
-    output$dataJinato <- DT::renderDataTable(
-      df_jinato(), options = list(scrollX = TRUE, initComplete = JS(
-        "function(settings, json) {",
-        "$(this.api().table().header()).css({'background-color': '#4682b4', 'color': 'white'});",
-        "}"), style = 'bootstrap', pageLength = 13, dom = 't'
-      ),
-      # colnames = stringr::str_to_title(colnames(DF_HASIL)),
+    output$muatJinato <- DT::renderDataTable(
+      df_jinato$muat[df_jinato$muat$tahun == input$tahunMuatInput, ],
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
+      rownames = FALSE
+    )
+    
+    output$muatPamatata <- DT::renderDataTable(
+      df_pamatata$muat[df_pamatata$muat$tahun == input$tahunMuatInput, ],
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
+      rownames = FALSE
+    )
+    
+    output$muatPattumbukan <- DT::renderDataTable(
+      df_pattumbukan$muat[df_pattumbukan$muat$tahun == input$tahunMuatInput, ],
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
       rownames = FALSE
     )
     
@@ -591,37 +682,236 @@ server <- function(input, output) {
     
     
     
-    
-    
-    
-    
-    # Tombol download EXCEL rekap
-    output$excelrekapButton <- downloadHandler(
+    # Tombol download EXCEL Muat
+    output$excelmuatButton <- downloadHandler(
       filename = function(){
-        paste0("Rekap_BongkarMuat_", format(Sys.time(), "%H:%M:%S_%d%b%Y"), ".xlsx")
+        paste0("Rekap_Muat_", format(Sys.time(), "%H:%M:%S_%d%b%Y"), ".xlsx")
       },
       content = function(fname){
-        writexl::write_xlsx(x = df_full(), path = fname)
+        file.copy(from = 'data/RekapMuat.xlsx', to = fname)
       }
     )
     
-    # Tombol download CSV rekap
-    output$csvrekapButton <- downloadHandler(
-      filename = function(){
-        paste0("Rekap_BongkarMuat_", format(Sys.time(), "%H:%M:%S_%d%b%Y"), ".csv")
-      },
-      content = function(fname){
-        vroom::vroom_write(x = df_full(), file = fname, delim = ',')
-      }
-    )
-    
-    # Tombol Copy rekap
-    observeEvent(input$copyrekapButton, {
-      print(input$tabBoxData)
+    # Tombol Copy Muat
+    observeEvent(input$copymuatButton, {
+      dat <- readxl::read_xlsx('data/RekapMuat.xlsx', sheet = input$tabBoxDataMuat)
       
-      clipr::write_clip(df_full())
+      clipr::write_clip(dat)
       shiny::showNotification("Data Copied", type = 'warning')
     })
+    
+    
+    
+    
+    # Data rekap ----------------------
+    output$bongkarJampea <- DT::renderDataTable(
+      df_jampea$bongkar[df_jampea$bongkar$tahun == input$tahunBongkarInput, ],
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't' ),
+      rownames = FALSE
+    )
+    
+    output$bongkarUjung <- DT::renderDataTable(
+      df_ujung$bongkar[df_ujung$bongkar$tahun == input$tahunBongkarInput, ],
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't' ),
+      rownames = FALSE
+    )
+    
+    output$bongkarBonerate <- DT::renderDataTable(
+      df_bonerate$bongkar[df_bonerate$bongkar$tahun == input$tahunBongkarInput, ],
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
+      rownames = FALSE
+    )
+    
+    output$bongkarKalaotoa <- DT::renderDataTable(
+      df_kalaotoa$bongkar[df_kalaotoa$bongkar$tahun == input$tahunBongkarInput, ],
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
+      rownames = FALSE
+    )
+    
+    output$bongkarKayuadi <- DT::renderDataTable(
+      df_kayuadi$bongkar[df_kayuadi$bongkar$tahun == input$tahunBongkarInput, ],
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
+      rownames = FALSE
+    )
+    
+    output$bongkarJinato <- DT::renderDataTable(
+      df_jinato$bongkar[df_jinato$bongkar$tahun == input$tahunBongkarInput, ],
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
+      rownames = FALSE
+    )
+    
+    output$bongkarPamatata <- DT::renderDataTable(
+      df_pamatata$bongkar[df_pamatata$bongkar$tahun == input$tahunBongkarInput, ],
+      options = list(style = 'bootstrap', pageLength = 13, dom = 't'),
+      rownames = FALSE
+    )
+    
+    output$bongkarPattumbukan <- DT::renderDataTable(
+      df_pattumbukan$bongkar[df_pattumbukan$bongkar$tahun == input$tahunBongkarInput, ],
+      options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
+      rownames = FALSE
+    )
+    
+    
+    
+    # Tombol download EXCEL Bongkar
+    output$excelbongkarButton <- downloadHandler(
+      filename = function(){
+        paste0("Rekap_Bongkar_", format(Sys.time(), "%H:%M:%S_%d%b%Y"), ".xlsx")
+      },
+      content = function(fname){
+        file.copy(from = 'data/RekapBongkar.xlsx', to = fname)
+      }
+    )
+    
+    # Tombol Copy Bongkar
+    observeEvent(input$copybongkarButton, {
+      dat <- readxl::read_xlsx('data/RekapBongkar.xlsx', sheet = input$tabBoxDataBongkar)
+      
+      clipr::write_clip(dat)
+      shiny::showNotification("Data Copied", type = 'warning')
+    })
+    
+    
+    
+    observeEvent(input$tahunMuatInput, {
+      TAHUN <- input$tahunMuatInput
+      PELABUHAN <- input$tabBoxDataMuat
+      df_full <- readxl::read_xlsx('data/RekapMuat.xlsx', sheet = PELABUHAN)
+      
+      if (TAHUN %in% unique(df_full$tahun)) {
+        df_full <- dplyr::filter(df_full, tahun == TAHUN)
+        
+        output[[paste0('muat', PELABUHAN)]] <- DT::renderDataTable(
+          df_full, options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
+          rownames = FALSE
+        )
+      }else{
+        shiny::showNotification(stringr::str_glue("Error data muat {PELABUHAN} tahun {TAHUN} tidak ditemukan"), type = 'error')
+      }
+    })
+    
+    observeEvent(input$tahunBongkarInput, {
+      TAHUN <- input$tahunBongkarInput
+      PELABUHAN <- input$tabBoxDataBongkar
+      df_full <- readxl::read_xlsx('data/RekapBongkar.xlsx', sheet = PELABUHAN)
+      
+      if (TAHUN %in% unique(df_full$tahun)) {
+        df_full <- dplyr::filter(df_full, tahun == TAHUN)
+        
+        output[[paste0('muat', PELABUHAN)]] <- DT::renderDataTable(
+          df_full, options = list(scrollX = TRUE, style = 'bootstrap', pageLength = 13, dom = 't'),
+          rownames = FALSE
+        )
+      }else{
+        shiny::showNotification(stringr::str_glue("Error data bongkar {PELABUHAN} tahun {TAHUN} tidak ditemukan"), type = 'error')
+      }
+    })
+    
+    
+    
+    
+    # Tab Visualisasi -------------------------------------------------------
+    output$kapalBox <- renderValueBox({
+      valueBox(
+        25, "Kunjungan Kapal", icon = icon("ferry", "fa-solid"),
+        color = "light-blue", width = 3
+      )
+    })
+    
+    output$penumpangBox <- renderValueBox({
+      valueBox(
+        "1231 / 1934", "Penumpang Naik/Turun", icon = icon("person", "fa-solid"),
+        color = "purple", width = 3
+      )
+    })
+    
+    output$motorBox <- renderValueBox({
+      valueBox(
+        "1927 / 1920", "Motor Naik/Turun", icon = icon("motorcycle", "fa-solid"),
+        color = "yellow", width = 3
+      )
+    })
+    
+    output$mobilBox <- renderValueBox({
+      valueBox(
+        "1840 / 2012", "Mobil Naik/Turun", icon = icon("car", "fa-solid"),
+        color = "aqua", width = 3
+      )
+    })
+    
+    output$grafikLine <- renderPlotly({
+      if (input$jenisVizInput == 'Kapal') {
+        df_kapal <- readxl::read_xlsx('data/df_kapal.xlsx')
+        df_kapal <- df_kapal[df_kapal$pelabuhan == input$pelabuhanVizInput, ]
+        
+        return(grafik_kapal(df_kapal))
+      }else{
+        df_lalulintas <- readxl::read_xlsx('data/df_lalulintas.xlsx')
+        df_lalulintas <- df_lalulintas[df_lalulintas$pelabuhan == input$pelabuhanVizInput, ]
+        
+        if (nrow(df_sub) == 0) {
+          return(empty_plot("Data tidak ditemukan"))
+        }else{
+          grafik_lalulintas(df_sub, input$jenisVizInput)
+        }
+      }
+    })
+    
+    
+    output$topBongkar <- renderPlotly({
+      topn <- as.numeric(input$topnVizBMInput)
+      df_bongkar <- readxl::read_xlsx('data/RekapBongkar.xlsx', sheet = input$pelVizBMInput)
+     
+      p_bongkar <- df_bongkar %>% 
+        dplyr::select(-Motor, -Mobil, -Penumpang) %>%
+        pivot_longer(-c(1:2)) %>% 
+        group_by(tahun, name) %>% 
+        summarise(
+          nilai = sum(value)
+        ) %>% 
+        filter(tahun == as.numeric(input$tahunVizBMInput), nilai != 0) 
+      
+      
+      if (sum(p_bongkar$nilai) == 0) {
+        empty_plot(str_glue("Tidak ada Data Bongkar di Pelabuhan {input$pelVizBMInput}"))
+      } else {
+        p_bongkar <- p_bongkar %>% 
+          mutate(
+            komoditas = reorder(name, nilai)
+          ) %>% 
+          top_n(topn, nilai)
+        
+        grafik_bm(p_bongkar, 'Bongkar', bar_color = 'rgba(49,130,189, 0.9)')
+      }
+    })
+    
+    output$topMuat <- renderPlotly({
+      topn <- as.numeric(input$topnVizBMInput)
+      df_muat <- readxl::read_xlsx('data/RekapMuat.xlsx', sheet = input$pelVizBMInput)
+     
+      p_muat <- df_muat %>% 
+        dplyr::select(-Motor, -Mobil, -Penumpang) %>%
+        pivot_longer(-c(1:2)) %>% 
+        group_by(tahun, name) %>% 
+        summarise(
+          nilai = sum(value)
+        ) %>% 
+        filter(tahun == as.numeric(input$tahunVizBMInput), nilai != 0) 
+      
+      if (sum(p_muat$nilai) == 0) {
+        empty_plot(str_glue("Tidak ada Data Muat di Pelabuhan {input$pelVizBMInput}"))
+      }else{
+        p_muat <- p_muat %>% 
+          mutate(
+            komoditas = reorder(name, nilai)
+          ) %>% 
+          top_n(topn, nilai)
+        
+        grafik_bm(p_muat, 'Muat')
+      }
+    })
+    
 }
 
 
