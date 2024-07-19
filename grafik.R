@@ -1,15 +1,13 @@
-# df_kapal <- readxl::read_xlsx("data/df_kapal.xlsx")
-# df_kapal <- df_kapal[df_kapal$pelabuhan == "Jampea", ]
-
-
 # Grafik Kapal ------------------------------------------------------------
 grafik_kapal <- function(data) {
   plot_ly(arrange(data, date), type = "scatter", mode = "lines+markers") %>%
     add_trace(
-      x = ~date, y = ~kapal, fill = "tozeroy", connectgaps = TRUE,
+      x = ~date, y = ~Kapal, connectgaps = TRUE,
       hovertemplate = paste("%{x}    :", "%{y} Kapal<extra></extra>"),
       line = list(color = "rgba(49,130,189, 1)", width = 3),
       marker = list(color = "rgba(49,130,189, 1)", size = 9),
+      
+      fill = "tozeroy",
       fillcolor = "rgba(49,130,189, 0.2)"
     ) %>%
     plotly::layout(
@@ -58,44 +56,60 @@ grafik_kapal <- function(data) {
     plotly::config(modeBarButtonsToRemove = c("zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d"))
 }
 
-# grafik_kapal(df_kapal)
-
-
 
 # Grafik Lalu Lintas ------------------------------------------------------
-# df_lalulintas <- readxl::read_xlsx('data/df_lalulintas.xlsx')
-# df_sub <- df_lalulintas[df_lalulintas$pelabuhan == 'Jampea', ]
-
-
 grafik_lalulintas <- function(data, jenis) {
-  df_sub <- data[data$nama == jenis, ]
-  df_sub <- arrange(df_sub, date)
-  
-  df_naik <- df_sub[df_sub$jenis == 'muat', ]
-  df_turun <- df_sub[df_sub$jenis == 'bongkar', ]
-  
+  satuan <- 'Unit'
+    
   if (jenis == 'Penumpang') {
     satuan <- 'Orang'
-  }else{
-    satuan <- 'Unit'
+    y1 <- 'Penumpang_muat'
+    y2 <- 'Penumpang_bongkar'
+    data <- data[c('date', y1, y2)]
+    
+  }else if (jenis == 'Mobil') {
+    y1 <- 'Mobil_muat'
+    y2 <- 'Mobil_bongkar'
+    data <- data[c('date', y1, y2)]
+    
+    if (sum(data[2:3]) == 0) {
+      return(empty_plot("Data tidak ditemukan"))
+    }
+    
+  }else if (jenis == 'Motor') {
+    y1 <- 'Motor_muat'
+    y2 <- 'Motor_bongkar'
+    data <- data[c('date', y1, y2)]
+  
+    if (sum(data[2:3]) == 0) {
+      return(empty_plot("Data tidak ditemukan"))
+    }
   }
   
-  plot_ly(type = "scatter", mode = "lines+markers") %>%
-    add_trace(
-      name = 'Naik',
-      data = df_naik,
-      x = ~date, y = ~nilai, connectgaps = TRUE,
-      hovertemplate = paste("%{x}    :", "%{y} ", satuan),
-      line = list(width = 3),
-      marker = list(size = 9)
-    ) %>%
+  y1 <- as.formula(paste0('~ ', y1))
+  y2 <- as.formula(paste0('~ ', y2))
+  
+  plot_ly(data = data, type = "scatter", mode = "lines+markers") %>%
     add_trace(
       name = 'Turun',
-      data = df_turun,
-      x = ~date, y = ~nilai, connectgaps = TRUE,
-      hovertemplate = paste("%{x}    :", "%{y} Orang"),
+      x = ~date, y = y2, connectgaps = TRUE,
+      hovertemplate = paste("%{x}    :", "%{y} ", satuan),
       line = list(color = "rgba(49,130,189, 1)", width = 3),
-      marker = list(color = "rgba(49,130,189, 1)", size = 9)
+      marker = list(color = "rgba(49,130,189, 1)", size = 9),
+      # biru 49,130,189,
+      # orange gba(228,140,28, 1)
+      fill = "tozeroy",
+      fillcolor = "rgba(49,130,189, 0.2)"
+    ) %>%
+    add_trace(
+      name = 'Naik',
+      x = ~date, y = y1, connectgaps = TRUE,
+      hovertemplate = paste("%{x}    :", "%{y} ", satuan),
+      line = list(color = "rgba(228,140,28, 1)", width = 3),
+      marker = list(color = "rgba(228,140,28, 1)", size = 9),
+      
+      fill = "tozeroy",
+      fillcolor = "rgba(228,140,28, 0.2)"
     ) %>%
     plotly::layout(
       showlegend = FALSE,
@@ -144,25 +158,8 @@ grafik_lalulintas <- function(data, jenis) {
 }
 
 
-# grafik_lalulintas(df_sub, 'Mobil')
-# grafik_lalulintas(df_sub, 'Motor')
-# grafik_lalulintas(df_sub, 'Penumpang')
-
 
 # Grafix Bongkar Muat -----------------------------------------------------
-# df_muat <- readxl::read_xlsx('data/RekapMuat.xlsx', sheet = 'Jampea')
-# 
-# p_muat <- df_muat %>% 
-#   dplyr::select(-Motor, -Mobil, -Penumpang) %>%
-#   pivot_longer(-c(1:2)) %>% 
-#   group_by(tahun, name) %>% 
-#   summarise(
-#     nilai = sum(value)
-#   ) %>% 
-#   filter(tahun == 2023, nilai != 0) %>% 
-#   top_n(10, nilai) 
-
-
 grafik_bm <- function(data, jenis, bar_color = 'rgba(0,100,80,0.7)'){
   plot_ly(
     data = data,
@@ -218,6 +215,3 @@ grafik_bm <- function(data, jenis, bar_color = 'rgba(0,100,80,0.7)'){
     plotly::config(modeBarButtonsToRemove = c("zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d"))
 }
 
-
-# grafik_bm(p_muat, 'Muat')
-# grafik_bm(p_muat, 'Muat', bar_color = 'rgba(49,130,189, 0.9)')
