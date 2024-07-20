@@ -5,7 +5,7 @@ account: ridsonap
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 12280956
-bundleId: 8885653
+bundleId: 8885749
 url: https://ridsonap.shinyapps.io/sepakat/
 version: 1
 asMultiple: FALSE

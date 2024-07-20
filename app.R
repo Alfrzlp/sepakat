@@ -38,7 +38,7 @@ header <- shinydashboard::dashboardHeader(
 
 # Footer ------------------------------------------------------------------
 footer <- shinydashboardPlus::dashboardFooter(
-  left = 'BPS Kab Kepulauan Selayar',
+  left = span(strong('Copyright © 2023-2024.', tags$a(href = "www.selayarkab.bps.go.id", "BPS Selayar")), '. All Rights Reserved'),
   right = 'Kepulauan Selayar, 2023'
 )
 
@@ -234,6 +234,7 @@ body <- shinydashboard::dashboardBody(
   tags$script(HTML("$('body').addClass('fixed');")),
   tags$head(
     tags$link(rel = "icon", type = "image/png", sizes = "16x16", href = "/rect23.png"),
+    tags$link(rel = "icon", type = "image/png", sizes = "32x32", href = "/rect23.png"),
     tags$title("Sepakat"),
     tags$style(
       '.content-wrapper {
@@ -285,6 +286,7 @@ body <- shinydashboard::dashboardBody(
 
 # Ui  -----------------------------------------------------------
 ui <- shinydashboardPlus::dashboardPage(
+  title = "sepakat",
   options = list(sidebarExpandOnHover = TRUE),
   skin = "blue", 
   header = header, 
